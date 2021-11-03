@@ -1,0 +1,186 @@
+<html>
+<head>
+<title>Intent Demo</title>
+<script>
+MathJax = {
+    startup: {
+        typeset: false
+    }
+}
+</script>
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">
+</script>
+<script>
+    /**
+     * XML utilities.
+     */
+    var XML = {};
+
+    /**
+     * Return an XML markup string from an XML node.
+     * 
+     * @param {XML} xml The XML node.
+     * @returns {String} The XML markup string.
+     */
+    XML.toString = function( xml )
+    {
+        var s = ( new XMLSerializer() ).serializeToString( xml );
+
+        // Non-breaking spaces may show up as a named entity (iOS)
+        if ( /&nbsp;/.exec( s ) )
+        {
+            s = s.replace( /&nbsp;/g, "&#x00A0;" );
+        }
+
+        // Character entity references may show up as raw characters
+        if ( /[\u0100-\uFFFF]/.exec( s ) )
+        {
+            s = s.replace( /[\u0100-\uFFFF]/g, function( c )
+            {
+                return "&#x" + c.charCodeAt().toString( 16 ) + ";";
+            } );
+        }
+
+        return s;
+    };
+
+    /**
+     * Return a formatted XML markup string from an XML node.
+     * 
+     * @param {XML} xml The XML node.
+     * @returns {String} The formatted XML markup string.
+     */
+    XML.print = function( xml )
+    {
+        if ( xml == null )
+        {
+            return "[null]\r\n";
+        }
+
+        var source = XML.toString( xml );
+
+        source = source.replace( / xmlns=\"[^\"]*\"/, "" );
+        source = source.replace( /<(\w[^\/>]*)><\/\1>/g, '<$1/>' );
+        source = source.replace( /(>)(<)(\/*)/g, '$1\r\n$2$3' );
+
+        source = source.replace( /(<p>)\r\n(<math)/g, '$1$2' );
+        source = source.replace( /(<\/math>)\r\n(<\/p>)/g, '$1$2' );
+
+        var pad = 0;
+        var result = '';
+        var pCheck = false;
+
+        source.split( '\r\n' ).forEach( function( s )
+        {
+            var indent = 0;
+
+            if ( s.match( /.+<\/\w[^>]*>$/ ) )
+            {
+                indent = 0;
+            }
+            else if ( s.match( /^<\/\w/ ) )
+            {
+                if ( pad !== 0 )
+                {
+                    pad -= 1;
+                }
+            }
+            else if ( s.match( /^<\w[^>]*[^\/]>.*$/ ) )
+            {
+                indent = 1;
+            }
+            else
+            {
+                indent = 0;
+            }
+
+            var padding = '';
+            var i;
+            for ( i = 0; i < pad; i += 1 )
+            {
+                padding += '  ';
+            }
+
+            if ( !pCheck )
+            {
+                result += padding;
+            }
+
+            var startP = s.lastIndexOf( "<p>" );
+            var endP = s.lastIndexOf( "</p>" );
+
+            if ( startP !== -1 && startP > endP )
+            {
+                pCheck = true;
+            }
+
+            if ( endP !== -1 && endP > startP )
+            {
+                pCheck = false;
+            }
+
+            result += s;
+
+            if ( !pCheck )
+            {
+                result += '\r\n';
+                pad += indent;
+            }
+
+        } );
+
+        return result;
+    };
+</script>
+<script type="text/javascript" src="intent.js">
+</script>
+<script>
+var runtest = function() {
+    markup = "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\r\n  <mrow>\r\n    <mi>x</mi>\r\n    <mo>=</mo>\r\n    <mfrac>\r\n      <mrow>\r\n        <mrow>\r\n          <mo>-</mo>\r\n          <mi>b</mi>\r\n        </mrow>\r\n        <mo form=\"infix\" intent=\"pm\">&#x00B1;</mo>\r\n        <msqrt>\r\n          <mrow intent=\"@plus\">\r\n            <msup>\r\n              <mi>b</mi>\r\n              <mn>2</mn>\r\n            </msup>\r\n            <mrow>\r\n              <mo form=\"infix\">-</mo>\r\n              <mrow>\r\n                <mn>4</mn>\r\n                <mo>&#x2062;</mo>\r\n                <mi>a</mi>\r\n                <mo>&#x2062;</mo>\r\n                <mi>c</mi>\r\n              </mrow>\r\n            </mrow>\r\n          </mrow>\r\n        </msqrt>\r\n      </mrow>\r\n      <mrow>\r\n        <mn>2</mn>\r\n        <mo>&#x2062;</mo>\r\n        <mi>a</mi>\r\n      </mrow>\r\n    </mfrac>\r\n  </mrow>\r\n</math>\r\n"
+
+    pmarkup.autocomplete="off"
+    pmarkup.autocorrect="off"
+    pmarkup.autocapitalize="off"
+    pmarkup.spellcheck=false
+
+    cmarkup.autocomplete="off"
+    cmarkup.autocorrect="off"
+    cmarkup.autocapitalize="off"
+    cmarkup.spellcheck=false
+
+    pmarkup.value = markup
+    pdisplay.innerHTML = markup
+    ptree.innerHTML = markup
+
+    MathJax.typeset([pdisplay]);
+
+    MML.ptoc( ptree.firstChild );
+    cmarkup.value = XML.print( ptree.firstChild.mathContent );
+};
+</script>
+<style>
+textarea {
+    resize: none;
+}
+
+#ptree {
+    display: none;
+}
+</style>
+</head>
+<body onload="runtest()">
+  <p id="pdisplay"></p>
+  <p id="ptree"></p>
+  <table>
+    <tr>
+      <td><label for="pmarkup">Presentation Markup</label></td>
+      <td><label for="cmarkup">Content Markup</label></td>
+    </tr>
+    <tr>
+      <td><textarea id="pmarkup" rows="30" cols="60"></textarea></td>
+      <td><textarea id="cmarkup" rows="30" cols="60"></textarea></td>
+    </tr>
+  </table>
+</body>
+</html>

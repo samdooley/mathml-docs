@@ -1,0 +1,1432 @@
+<html>
+<head>
+<title>Semantic Intent</title>
+<style>
+body {
+    font-family:  Segoe UI, Helvetica, Arial, sans-serif;
+    font-size: 18px;
+}
+pre {
+    background-color: rgba(27,31,35,0.05);
+    line-height: 1.4;
+    padding: 1.0em;
+}
+pre a, table a {
+    text-decoration: none;
+}
+p tt {
+    background-color: rgba(27,31,35,0.05);
+    padding: 0.2em;
+}
+table, td {
+    border: 1px solid black;
+}
+table {
+    margin-left: 4ex;
+}
+td {
+    padding: 0.2em;
+}
+h2 {
+    counter-reset: h3-counter;
+}
+h3:before {
+    content: counter(h3-counter) ".\a0\a0";
+    counter-increment: h3-counter;
+}
+</style>
+</head>
+<body>
+
+<hr>
+<h2 id="toc">Table of Contents</h2>
+
+<ul>
+<li><a href="#abstract">Abstract</a></li>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#intent_attribute">The intent attribute</a></li>
+<li><a href="#explicit_apply">Explicit function application</a></li>
+<li><a href="#implicit_apply">Implicit function application</a></li>
+<li><a href="#argument_refer">Argument reference</a></li>
+<ul>
+<li><a href="#named_reference">Named argument reference</a></li>
+<li><a href="#numeric_reference">Numeric argument reference</a></li>
+</ul>
+<li><a href="#function_name">Function name</a></li>
+<li><a href="#literal_value">Literal value</a></li>
+<ul>
+<li><a href="#identifier_literal">Identifier literal</a></li>
+<li><a href="#numeric_literal">Numeric literal</a></li>
+</ul>
+<li><a href="#special_form">Special form</a></li>
+
+<li><a href="#default_intent">Presentation element defaults</a></li>
+</ul>
+
+<hr>
+<h2 id="abstract">Abstract</h2>
+
+<p>
+MathML is a W3C recommendation that represents mathematical expressions,
+using both presentation and content markup.  This note describes a way
+to add semantic information to presentation markup using an intent attribute
+to bridge the gap between the presentation and content forms.
+</p>
+
+<hr>
+<h2 id="introduction">Introduction</h2>
+
+<p>
+The <i>presentation</i> of an expression consists of special symbols
+spatially arranged to convey mathematical meaning.  Conventional math
+notation includes visual ambiguities that a sighted human reader is
+taught to resolve in context in ways that may be difficult to infer
+by software tools, especially for the visually impaired.
+</p>
+
+<p>
+The <i>content</i> of an expression consists of function and operator
+symbols applied to sequences of arguments, which may themselves be
+function applications or ground terms such as numerals or variables.
+The content markup used to encode an expression may be quite complex,
+and is often not included with the presentation markup.
+</p>
+
+<p>
+This document describes the <i>intent</i> of an element as a functional
+expression that captures the meaning conveyed by the author.  It is meant
+to bridge the gap between the presentation of an expression and its
+underlying content and semantics, and to resolve ambiguities that may affect
+the reading and understanding of the notation, whether for human users,
+screen readers, or other assistive technology.
+</p>
+
+<p>
+The intent of an expression should capture the meaning the author wants
+to convey, and should reflect the meaning a human reader would be
+expected to understand from the expression.  Often, the intent may be
+inferred from presentation markup, especially when the author provides
+additional information, such as the subject area.
+</p>
+
+<hr>
+<h2 id="intent_attribute">The intent attribute</h2>
+
+<p>
+The <tt>intent</tt> attribute encodes the intent of an element as a
+functional expression that may be constructed using the intent values
+of any subordinate elements contained in the element being described.
+</p>
+
+<p>
+The value of the <tt>intent</tt> attribute is an <tt>{intent}</tt>
+expression that takes one of the following forms, as specified by
+the <a href="#intent_grammar">intent grammar</a> included below.
+This section provides a brief description of these forms, each of
+which is described in detail, with examples, in its own section.
+</p>
+
+<ul>
+<li><a href="#explicit_apply">Explicit function application</a></li>
+<li><a href="#implicit_apply">Implicit function application</a></li>
+<li><a href="#argument_refer">Argument reference</a></li>
+<li><a href="#function_name">Function name</a></li>
+<li><a href="#literal_value">Literal value</a></li>
+<li><a href="#special_form">Special form</a></li>
+</ul>
+
+<p>
+An <a href="#explicit_apply">explicit function application</a>
+is a function <tt>{value}</tt> followed by zero or more
+comma-separated <tt>{intent}</tt> arguments contained
+in parentheses.
+</p>
+
+<p>
+An <a href="#implicit_apply">implicit function application</a>,
+indicated by the <tt>@</tt> sign, provides a function
+<tt>{value}</tt> to be applied to the implicit arguments
+contained in the current element.
+</p>
+
+<p>
+An <a href="#argument_refer">argument reference</a>,
+indicated by the <tt>$</tt> sign, provides a
+<a href="#named_reference">named</a> or
+<a href="#numeric_reference">numeric</a>
+reference to an argument contained in the current element.
+</p>
+
+<p>
+A <a href="#function_name">function name</a> is a
+<tt>{name}</tt> standing alone that indicates that the expression
+describes a named operator in isolation, separate from the
+arguments to which it may be applied.
+</p>
+
+<p>
+A <a href="#literal_value">literal value</a>, indicated
+by the <tt>#</tt> sign, provides an encoding for literal
+<a href="#identifier_literal">identifiers</a> and
+<a href="#numeric_literal">numbers</a> used in an <tt>{intent}</tt> expression.
+</p>
+
+<p>
+A <a href="#special_form">special form</a>, indicated by
+the character <tt>!</tt> or <tt>/</tt>, encodes the default intent
+for elements with special behaviors, such as token elements,
+container elements, and elements with empty intent.
+</p>
+
+<p id="intent_grammar">
+The following grammar provides the definition for the <tt>intent</tt> attribute value.
+</p>
+
+<pre>
+intent :=
+    {explicit} | {implicit} | {reference} | {name} | {literal} | {special}
+
+explicit :=
+    {value} '(' ( {intent} [ ',' {intent} ]* )? ')'
+
+implicit :=
+    {value} '@' | '@' {value} | '@'
+
+reference :=
+    '$' {name} | '$' {number}
+
+literal :=
+    '#' {name} | '#'? {number}
+
+special :=
+    '!' {name} | '!' | '/' {name} | '/'
+
+value :=
+    {reference} | {literal} | {name}
+
+name := [A-Za-z_][A-Za-z0-9_.]*
+
+number := [0-9.][A-Za-z0-9_.]*
+</pre>
+
+<p>
+A function <tt>{value}</tt> is a <a href="#function_name">function name</a>,
+a <a href="#named_reference">named</a> or <a href="#numeric_reference">numeric</a>
+argument reference, or an <a href="#identifier_literal">identifier</a> or
+<a href="#numeric_literal">numeric</a> literal.  A function
+<tt>{value}</tt> may be used in function position within an explicit
+or implicit function application, or it may stand on its own as a
+self-contained <tt>{intent}</tt> expression.  Other special forms
+for the intent attribute are not used in function position.
+</p>
+
+<p>
+A <tt>{name}</tt> is a word that starts with a letter or underscore,
+and may include subsequent letters, numbers, underscores, and decimal
+points.  A <tt>{name}</tt> to be used as an XML element name should
+not include a decimal point, and should not begin with the string
+<tt>xml</tt>, in either upper or lower case.
+</p>
+
+<p>
+A <tt>{number}</tt> is a word that starts with a numeral or decimal
+point, and may include subsequent letters, numbers, underscores, and
+decimal points.  The <tt>{number}</tt> used in a
+<a href="#numeric_reference">numeric argument reference</a>
+should contain only numerals.
+</p>
+
+<p>
+Since the empty string is not a valid <tt>intent</tt> expression,
+an empty <tt>intent</tt> attribute value should be treated as if
+the <tt>intent</tt> attribute were not present, and if a default
+intent is defined for the element, it should be used.
+</p>
+
+<hr>
+<h2 id="explicit_apply">Explicit function application</h2>
+
+<pre>
+explicit :=
+    {value} '(' ( {intent} [ ',' {intent} ]* )? ')'
+</pre>
+
+<p>
+An <em>explicit function application</em> is a function <tt>{value}</tt>
+followed by zero or more comma-separated <tt>{intent}</tt> arguments
+contained in parentheses.
+</p>
+
+<p>
+The intent values use function application syntax to create the intent of
+an element in terms of the intent of its parts.  The functional expression
+denotes the application of a named function to zero or more arguments.
+</p>
+
+<p>
+The intent value <tt>{name} ( {intent} , ... , {intent} )</tt>
+produces an <tt>&lt;apply&gt;</tt> element with a specific named operator,
+and processes the child intent expressions to supply the arguments of
+the operator.
+</p>
+
+<pre>
+&lt;mrow intent="plus($x,$y)"&gt;
+  &lt;mi arg="x"&gt;a&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mi arg="y"&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="factorial($x)"&gt;
+  &lt;mi arg="x"&gt;n&lt;/mi&gt;
+  &lt;mo&gt;!&lt;/mo&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;factorial/&gt;
+  &lt;ci&gt;n&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mi intent="identity()"&gt;I&lt;/mi&gt;
+    -->
+&lt;apply&gt;
+  &lt;identity/&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The intent value <tt>${name} ( {intent} , ... , {intent} )</tt>
+produces an <tt>&lt;apply&gt;</tt> element where the operator is found using
+a <a href="#named_reference">named argument reference</a>, and processes
+the child intent expressions to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mrow intent="$f($x,$y)"&gt;
+  &lt;mi arg="x"&gt;a&lt;/mi&gt;
+  &lt;mo arg="f" intent="plus"&gt;+&lt;/mo&gt;
+  &lt;mi arg="y"&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="$f($x)"&gt;
+  &lt;mi arg="x"&gt;n&lt;/mi&gt;
+  &lt;mo arg="f" intent="factorial"&gt;!&lt;/mo&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;factorial/&gt;
+  &lt;ci&gt;n&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The other intent forms that may be used in function position
+in an explicit function application are
+<a href="#numeric_reference">numeric argument references</a>,
+or <a href="#identifier_literal">identifier</a>
+or <a href="#numeric_literal">numeric</a> literals.
+</p>
+
+<hr>
+<h2 id="implicit_apply">Implicit function application</h2>
+
+<pre>
+implicit :=
+    {value} '@' | '@' {value} | '@'
+</pre>
+
+<p>
+An <em>implicit function application</em>, indicated by the <tt>@</tt>
+sign, provides a function <tt>{value}</tt> to be applied to the implicit
+arguments contained in the current element.
+</p>
+
+<p>
+Implicit function application takes one of the following forms.
+</p>
+
+<table>
+<tr><td><a href="#apply_sequence"><tt>@</tt></a></td>
+    <td><tt>Apply sequence</tt></td><td><tt>&lt;mrow&gt;</tt></td></tr>
+<tr><td><a href="#apply_function"><tt>@{name}</tt></a></td>
+    <td><tt>Apply function name</tt></td><td><tt>&lt;mfrac&gt;</tt></td></tr>
+<tr><td><a href="#apply_named_reference"><tt>${name}@</tt></a></td>
+    <td><tt>Apply named reference</tt></td><td></td></tr>
+<tr><td><a href="#apply_numeric_reference"><tt>${number}@</tt></a></td>
+    <td><tt>Apply numeric reference</tt></td><td></td></tr>
+<tr><td><a href="#apply_named_literal"><tt>#{name}@</tt></a></td>
+    <td><tt>Apply identifier literal</tt></td><td></td></tr>
+<tr><td><a href="#apply_numeric_literal"><tt>#?{number}@</tt></a></td>
+    <td><tt>Apply numeric literal</tt></td><td></td></tr>
+</table>
+
+<h3 id="apply_sequence">Apply sequence</h3>
+
+<p>
+The intent value <tt>@</tt> is used for the <tt>&lt;mrow&gt;</tt> element
+(and other elements that contain an implied <tt>&lt;mrow&gt;</tt>) to
+process its child elements to produce an <tt>&lt;apply&gt;</tt> element whose
+operator is taken from the <tt>&lt;mo&gt;</tt> element contained in the
+row, when that operator is unique, even if it appears multiple times, and
+to process the child elements to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mrow intent="@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mi&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="@"&gt;
+  &lt;mn&gt;4&lt;/mn&gt;
+  &lt;mo&gt;&amp;#x2062;&lt;/mo&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo&gt;&amp;#x2062;&lt;/mo&gt;
+  &lt;mi&gt;c&lt;/mi&gt;
+&lt;/mrow&gt;
+    --&gt;
+&lt;apply&gt;
+  &lt;times/&gt;
+  &lt;cn&gt;4&lt;/cn&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;c&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<h3 id="apply_function">Apply function name</h3>
+
+<p>
+The intent value <tt>@{name}</tt> is used as the default intent for special
+presentation elements (<tt>&lt;mfrac&gt;</tt>, <tt>&lt;msqrt&gt;</tt>,
+<tt>&lt;mroot&gt;</tt>, and <tt>&lt;msup&gt;</tt>) to produce an
+<tt>&lt;apply&gt;</tt> element with a specific named operator, and
+to process the child elements to supply the arguments of the operator.
+</p>
+
+<p>
+The intent value <tt>@{name}</tt> is also used for the <tt>&lt;mrow&gt;</tt>
+element (and other elements that contain an implied <tt>&lt;mrow&gt;</tt>) to
+produce an <tt>&lt;apply&gt;</tt> element with a specific named operator, and
+to process the child elements to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mfrac intent="@divide"&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mfrac&gt;
+    -->
+&lt;apply&gt;
+  &lt;divide/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="@plus"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mi&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The intent value <tt>{name}@</tt> is equivalent to <tt>@{name}</tt>.
+</p>
+
+<pre>
+&lt;mrow intent="plus@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mi&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<h3 id="apply_named_reference">Apply named reference</h3>
+
+<p>
+The intent value <tt>${name}@</tt> is used to produce an <tt>&lt;apply&gt;</tt>
+element where the operator is found using a
+<a href="#named_reference">named argument reference</a>,
+and to process the child elements to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mrow intent="$f@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo arg="f"&gt;+&lt;/mo&gt;
+  &lt;mi&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The intent value <tt>@${name}</tt> is equivalent to <tt>${name}@</tt>.
+</p>
+
+<h3 id="apply_numeric_reference">Apply numeric reference</h3>
+
+<p>
+The intent value <tt>${number}@</tt> is used to produce an <tt>&lt;apply&gt;</tt>
+element where the operator is found using a <a href="#numeric_reference">numeric argument reference</a>,
+and to process the child elements to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mrow intent="$1@"&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mi&gt;y&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;ci&gt;y&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The intent value <tt>@${number}</tt> is equivalent to <tt>${number}@</tt>.
+</p>
+
+<h3 id="apply_named_literal">Apply identifier literal</h3>
+
+<p>
+The intent value <tt>#{name}@</tt> is used to produce an <tt>&lt;apply&gt;</tt>
+element where the operator is created as a <tt>ci</tt> element with the given
+name as the character data of the operator, and to process the child elements
+to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mrow intent="#x@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+Note that the intent value <tt>#{name}@</tt> differs from <tt>{name}@</tt>,
+which creates the operator as an empty element.
+</p>
+
+<pre>
+&lt;mrow intent="x@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;x/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The intent value <tt>@#{name}</tt> is equivalent to <tt>#{name}@</tt>.
+</p>
+
+<h3 id="apply_numeric_literal">Apply numeric literal</h3>
+
+<p>
+The intent value <tt>#?{number}@</tt> is used to produce an <tt>&lt;apply&gt;</tt>
+element where the operator is created as a <tt>cn</tt> element with the given
+number as the character data of the operator, and to process the child elements
+to supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mrow intent="#42@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;cn&gt;42&lt;/cn&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+Note that the <tt>#</tt> sign for a numeric literal is optional, as it is elsewhere.
+</p>
+
+<pre>
+&lt;mrow intent="42@"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;cn&gt;42&lt;/cn&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The intent value <tt>@#?{number}</tt> is equivalent to <tt>#?{number}@</tt>.
+</p>
+
+<hr>
+<h2 id="argument_refer">Argument reference</h2>
+
+<pre>
+reference :=
+    '$' {name} | '$' {number}
+</pre>
+
+<p>
+An <em>argument reference</em>, indicated by the <tt>$</tt> sign,
+provides a <a href="#named_reference">named</a> or
+<a href="#numeric_reference">numeric</a> reference to an argument
+contained in the current element.
+</p>
+
+<h3 id="named_reference">Named argument reference</h3>
+
+<p>
+The <tt>arg</tt> attribute assigns a symbolic name for an element.
+<pre>
+arg := {name}
+</pre>
+</p>
+
+<p>
+The <i>argument name</i> can then be used in a <i>named argument reference</i>.
+<pre>
+reference := '$' {name}
+</pre>
+</p>
+
+<p>
+The intent value <tt>${name}</tt> is used to include the intent value of
+the element assigned to the given symbolic name.
+</p>
+
+<p>
+An argument name may be used within the intent attribute of any ancestor
+element of the element where it is assigned.  The intent attribute of an
+element may refer to the argument name assigned to any of its descendant
+elements.
+</p>
+
+<p>
+When an argument name is used within the intent attribute of an ancestor
+element, it is not visible to be used by enclosing ancestor elements.
+That is, the nearest ancestor use of an argument name defines a local
+scope for the argument name.
+</p>
+
+<p>
+An argument name must be unique within the element that uses it.
+</p>
+
+<pre>
+&lt;mrow intent="plus($x,$y)"&gt;
+  &lt;mi arg="x"&gt;a&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mi arg="y"&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="factorial($x)"&gt;
+  &lt;mi arg="x"&gt;n&lt;/mi&gt;
+  &lt;mo&gt;!&lt;/mo&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;factorial/&gt;
+  &lt;ci&gt;n&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="$f($x)"&gt;
+  &lt;mi arg="x"&gt;n&lt;/mi&gt;
+  &lt;mo arg="f" intent="factorial"&gt;!&lt;/mo&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;factorial/&gt;
+  &lt;ci&gt;n&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="$int($fn,$var,$lo,$hi)"&gt;
+  &lt;msubsup&gt;
+    &lt;mo arg="int" intent="integral"&gt;&amp;#x222B;&lt;/mo&gt;
+    &lt;mn arg="lo"&gt;0&lt;/mn&gt;
+    &lt;mn arg="hi"&gt;1&lt;/mn&gt;
+  &lt;/msubsup&gt;
+  &lt;msup arg="fn" intent="power($base,$exp)"&gt;
+    &lt;mi arg="base"&gt;x&lt;/mi&gt;
+    &lt;mn arg="exp"&gt;2&lt;/mn&gt;
+  &lt;/msup&gt;
+  &lt;mo&gt;&amp;#x2146;&lt;/mo&gt;
+  &lt;mi arg="var"&gt;x&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;integral/&gt;
+  &lt;apply&gt;
+    &lt;power/&gt;
+    &lt;ci&gt;x&lt;/ci&gt;
+    &lt;cn&gt;2&lt;/cn&gt;
+  &lt;/apply&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;0&lt;/cn&gt;
+  &lt;cn&gt;1&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<h3 id="numeric_reference">Numeric argument reference</h3>
+
+<p>
+An <i>argument index</i> can be used in a <i>numeric argument reference</i>.
+<pre>
+reference := '$' {number}
+</pre>
+</p>
+
+<p>
+The intent value <tt>${number}</tt> is used to include the intent value of
+the argument element at the given index in the argument list.
+</p>
+
+<p>
+The argument list for an element consists of its non-operator descendant
+elements with intent that are not contained in another descendant element
+with intent.
+</p>
+
+<pre>
+&lt;mrow intent="plus($1,$2)"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mi&gt;b&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;b&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="factorial($1)"&gt;
+  &lt;mi&gt;n&lt;/mi&gt;
+  &lt;mo&gt;!&lt;/mo&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;factorial/&gt;
+  &lt;ci&gt;n&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="$f($1)"&gt;
+  &lt;mi&gt;n&lt;/mi&gt;
+  &lt;mo arg="f" intent="factorial"&gt;!&lt;/mo&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;factorial/&gt;
+  &lt;ci&gt;n&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="$int($3,$4,$1,$2)"&gt;
+  &lt;msubsup&gt;
+    &lt;mo arg="int" intent="integral"&gt;&amp;#x222B;&lt;/mo&gt;
+    &lt;mn&gt;0&lt;/mn&gt;
+    &lt;mn&gt;1&lt;/mn&gt;
+  &lt;/msubsup&gt;
+  &lt;msup&gt;
+    &lt;mi&gt;x&lt;/mi&gt;
+    &lt;mn&gt;2&lt;/mn&gt;
+  &lt;/msup&gt;
+  &lt;mo&gt;&amp;#x2146;&lt;/mo&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;integral/&gt;
+  &lt;apply&gt;
+    &lt;power/&gt;
+    &lt;ci&gt;x&lt;/ci&gt;
+    &lt;cn&gt;2&lt;/cn&gt;
+  &lt;/apply&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;0&lt;/cn&gt;
+  &lt;cn&gt;1&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<hr>
+<h2 id="function_name">Function name</h2>
+
+<pre>
+intent :=
+    {name}
+</pre>
+
+<p>
+A <em>function name</em> is a <tt>{name}</tt> standing alone that
+indicates that the expression describes a named operator in isolation,
+separate from the arguments to which it may be applied.
+</p>
+
+<p>
+The intent value <tt>{name}</tt> creates an empty element with the given name.
+It is not used as the default intent for any presentation element, but may be
+used as an explicit intent value to specify an operator symbol.
+</p>
+
+<pre>
+&lt;mo intent="plus"&gt;+&lt;/mo&gt;
+    -->
+&lt;plus/&gt;
+</pre>
+
+<pre>
+&lt;mo intent="cross"&gt;&times;&lt;/mo&gt;
+    -->
+&lt;cross/&gt;
+</pre>
+
+<hr>
+<h2 id="literal_value">Literal value</h2>
+
+<pre>
+literal :=
+    '#' {name} | '#'? {number}
+</pre>
+
+<p>
+A <em>literal value</em>, indicated by the <tt>#</tt> sign, provides
+an encoding for literal <a href="#identifier_literal">identifiers</a>
+and <a href="#numeric_literal">numbers</a> used in an <tt>{intent}</tt>
+expression.
+</p>
+
+<h3 id="identifier_literal">Identifier literal</h3>
+
+<p>
+The intent value <tt>#{name}</tt> creates a <tt>&lt;ci&gt;</tt> token element
+with the given name as the character data of the token element.  It is not used
+as the default intent for any presentation element, but may be used as a explicit
+intent value to specify a literal identifier.  The initial <tt>#</tt> sign is
+required to specify an identifier literal, instead of an operator symbol.
+</p>
+
+<pre>
+&lt;mrow intent="#x"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;ci&gt;x&lt;/ci&gt;
+</pre>
+
+<p>
+Note that the intent value <tt>#{name}</tt> differs from <tt>{name}</tt>,
+which creates an operator as an empty element.
+</p>
+
+<pre>
+&lt;mrow intent="x"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;x/&gt;
+</pre>
+
+<h3 id="numeric_literal">Numeric literal</h3>
+
+<p>
+The intent value <tt>#{number}</tt> creates a <tt>&lt;cn&gt;</tt> token element
+with the given number as the character data of the token element.  It is not used
+as the default intent for any presentation element, but may be used as a explicit
+intent value to specify a literal number.  The initial <tt>#</tt> sign is optional,
+since a numeric literal must begin with a numeral and so it can stand by itself.
+</p>
+
+<pre>
+&lt;mrow intent="#42"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;cn&gt;42&lt;/cn&gt;
+</pre>
+
+<pre>
+&lt;mrow intent="42"&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;cn&gt;42&lt;/cn&gt;
+</pre>
+
+<hr>
+<h2 id="special_form">Special form</h2>
+
+<pre>
+special :=
+    '!' {name} | '!' | '/' {name} | '/'
+</pre>
+
+<p>
+A <em>special form</em>, indicated by the character <tt>!</tt> or <tt>/</tt>,
+encodes the default intent for elements with special behaviors, such as token
+elements, container elements, and elements with empty intent.
+</p>
+
+<p>
+The intent values use these special forms.
+</p>
+
+<table>
+<tr><td><a href="#token_intent"><tt>!{name}</tt></a></td>
+    <td><tt>Token intent</tt></td><td><tt>&lt;mi&gt;</tt> <tt>&lt;mn&gt;</tt></td></tr>
+<tr><td><a href="#operator_intent"><tt>!</tt></a></td>
+    <td><tt>Operator intent</tt></td><td><tt>&lt;mo&gt;</tt></td></tr>
+<tr><td><a href="#container_intent"><tt>/{name}</tt></a></td>
+    <td><tt>Container intent</tt></td><td><tt>&lt;math&gt;</tt></td></tr>
+<tr><td><a href="#empty_intent"><tt>/</tt></a></td>
+    <td><tt>Empty intent</tt></td><td></td></tr>
+</table>
+
+<h3 id="token_intent">Token intent</h3>
+
+<p>
+The intent value <tt>!{name}</tt> is used for the token elements <tt>&lt;mi&gt;</tt>
+and <tt>&lt;mn&gt;</tt> to create content elements <tt>&lt;ci&gt;</tt> and
+<tt>&lt;cn&gt;</tt>, respectively, to contain the character data from the
+token element.
+</p>
+
+<pre>
+&lt;mi intent="!ci"&gt;x&lt;/mi&gt;
+    -->
+&lt;ci&gt;x&lt;/ci&gt;
+</pre>
+
+<pre>
+&lt;mn intent="!cn"&gt;3&lt;/mn&gt;
+    -->
+&lt;cn&gt;3&lt;/cn&gt;
+</pre>
+
+<p>
+Since this special form is the default intent value for the <tt>&lt;mi&gt;</tt>
+and <tt>&lt;mn&gt;</tt> elements, it is rarely needed elsewhere.
+</p>
+
+<h3 id="operator_intent">Operator intent</h3>
+
+<p>
+The intent value <tt>!</tt> is used for the <tt>&lt;mo&gt;</tt> element to
+allow it to create an empty operator element using the name found in the
+operator lookup table for the character data it contains.  If the operator
+is not found in the operator lookup table, but represents a valid XML name,
+an empty operator element with the operator name will be created instead.
+Otherwise, the presentation element is considered to have empty intent.
+</p>
+
+<pre>
+&lt;mo intent="!"&gt;+&lt;/mo&gt;
+    -->
+&lt;plus/&gt;
+</pre>
+
+<p>
+Since the operator lookup table defines <tt>+</tt> as <tt>plus</tt>.
+</p>
+
+<pre>
+&lt;mo intent="!"&gt;times&lt;/mo&gt;
+    -->
+&lt;times/&gt;
+</pre>
+
+<p>
+Since the word <tt>times</tt> represents a valid XML name.
+</p>
+
+<pre>
+&lt;mo intent="!"&gt;&#x2295;&lt;/mo&gt;
+    --> []
+</pre>
+
+<p>
+If the <tt>&#x2295;</tt> operator is not in the operator lookup table.
+</p>
+
+<pre>
+&lt;mo intent="oplus"&gt;&#x2295;&lt;/mo&gt;
+    -->
+&lt;oplus/&gt;
+</pre>
+
+<p>
+The <tt>intent</tt> attribute can override the default behavior.
+</p>
+
+<p>
+Since the <tt>!</tt> special form is the default intent value for the
+<tt>&lt;mo&gt;</tt> element, it is rarely needed elsewhere.
+</p>
+
+<h3 id="container_intent">Container intent</h3>
+
+<p>
+The intent value <tt>/{name}</tt> allows elements like <tt>&lt;math&gt;</tt>
+to create a named container element, and to process its presentation child
+elements to create the content child elements of the container.
+</p>
+
+<pre>
+&lt;math intent="/math"&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+&lt;/math&gt;
+    -->
+&lt;math&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+&lt;/math&gt;
+</pre>
+
+<p>
+Since this special form is the default intent value for the
+<tt>&lt;math&gt;</tt> element, it is rarely needed elsewhere.
+</p>
+
+<h3 id="empty_intent">Empty intent</h3>
+
+<p>
+The intent value <tt>/</tt> is used for those elements (<tt>&lt;mtext&gt;</tt>,
+<tt>&lt;mspace&gt;</tt>, and <tt>&lt;mphantom&gt;</tt>) that have empty intent.
+It may be used as an explicit intent value.  An element with empty intent does
+not create a content element, and is not included in the intent of its parent
+element.
+</p>
+
+<pre>
+&lt;mtext intent="/"&gt;Theorem 1&lt;/mtext&gt;
+    --> []
+</pre>
+
+<pre>
+&lt;mspace width="2ex" intent="/"/&gt;
+    --> []
+</pre>
+
+<hr>
+<h2 id="default_intent">Presentation element defaults</h2>
+
+<p>
+Many presentation elements have predefined default intent values.  These rules
+provide default intent values for tools that process the intent values.  They
+are not intended to provide default values for the XML attributes as part of
+the document markup.
+</p>
+
+<table>
+<tr><td><tt>&lt;math&gt;</tt></td><td><tt>/math</tt></td></tr>
+
+<tr><td><tt>&lt;mi&gt;</tt></td><td><tt>!ci</tt></td></tr>
+<tr><td><tt>&lt;mn&gt;</tt></td><td><tt>!cn</tt></td></tr>
+<tr><td><tt>&lt;mo&gt;</tt></td><td><tt>!</tt></td></tr>
+<tr><td><tt>&lt;mtext&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mspace&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;ms&gt;</tt></td><td><tt>/</tt></td></tr>
+
+<tr><td><tt>&lt;mrow&gt;</tt></td><td><tt>@</tt></td></tr>
+<tr><td><tt>&lt;mfrac&gt;</tt></td><td><tt>@divide</tt></td></tr>
+<tr><td><tt>&lt;msqrt&gt;</tt></td><td><tt>@root</tt></td></tr>
+<tr><td><tt>&lt;mroot&gt;</tt></td><td><tt>@root</tt></td></tr>
+<tr><td><tt>&lt;mstyle&gt;</tt></td><td><tt>@</tt></td></tr>
+<tr><td><tt>&lt;merror&gt;</tt></td><td><tt>@</tt></td></tr>
+<tr><td><tt>&lt;mpadded&gt;</tt></td><td><tt>@</tt></td></tr>
+<tr><td><tt>&lt;mphantom&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mfenced&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;menclose&gt;</tt></td><td><tt>/</tt></td></tr>
+
+<tr><td><tt>&lt;msub&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;msup&gt;</tt></td><td><tt>@power</tt></td></tr>
+<tr><td><tt>&lt;msubsup&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;munder&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mover&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;munderover&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mmultiscripts&gt;</tt></td><td><tt>/</tt></td></tr>
+
+<tr><td><tt>&lt;mtable&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mlabeledtr&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mtr&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mtd&gt;</tt></td><td><tt>@</tt></td></tr>
+<tr><td><tt>&lt;maligngroup&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;malignmark&gt;</tt></td><td><tt>/</tt></td></tr>
+
+<tr><td><tt>&lt;mstack&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mlongdiv&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;msgroup&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;msrow&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mscarries&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;mscarry&gt;</tt></td><td><tt>/</tt></td></tr>
+<tr><td><tt>&lt;msline&gt;</tt></td><td><tt>/</tt></td></tr>
+
+<tr><td><tt>&lt;maction&gt;</tt></td><td><tt>/</tt></td></tr>
+
+</table>
+
+<h3>Math elements</h3>
+
+<p>
+The default intent value for the <tt>&lt;math&gt;</tt> element creates
+a new <tt>&lt;math&gt;</tt> element and processes the presentation child
+elements to create the content child elements of the result.
+</p>
+
+<pre>
+&lt;math&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+&lt;/math&gt;
+    -->
+&lt;math&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+&lt;/math&gt;
+</pre> 
+
+<h3>Token elements</h3>
+
+<p>
+The default intent values for the token elements <tt>&lt;mi&gt;</tt>,
+<tt>&lt;mn&gt;</tt>, and <tt>&lt;mo&gt;</tt> allow the character data
+within these elements to create content elements <tt>&lt;ci&gt;</tt>,
+<tt>&lt;cn&gt;</tt>, and empty operator elements, respectively.  The
+<tt>&lt;mo&gt;</tt> element creates an empty operator element using
+the name found in the operator lookup table for the character data it
+contains.
+</p>
+
+<pre>
+&lt;mi&gt;x&lt;/mi&gt;
+    -->
+&lt;ci&gt;x&lt;/ci&gt;
+</pre>
+
+<pre>
+&lt;mn&gt;3&lt;/mn&gt;
+    -->
+&lt;cn&gt;3&lt;/cn&gt;
+</pre>
+
+<pre>
+&lt;mo&gt;+&lt;/mo&gt;
+    -->
+&lt;plus/&gt;
+</pre>
+
+<p>
+The default intent values for the token elements <tt>&lt;mtext&gt;</tt>,
+<tt>&lt;mspace&gt;</tt>, and <tt>&lt;ms&gt;</tt> do not create content
+elements.
+</p>
+
+<pre>
+&lt;mtext&gt;Theorem 1&lt;/mtext&gt;
+    --> []
+</pre>
+
+<pre>
+&lt;mspace width="2ex"/&gt;
+    --> []
+</pre>
+
+<pre>
+&lt;ms&gt;&amp;amp;&lt;/ms&gt;
+    --> []
+</pre>
+
+<h3>Layout elements</h3>
+
+<p>
+The default intent value for the <tt>&lt;mrow&gt;</tt> element processes
+its child elements to produce an <tt>&lt;apply&gt;</tt> element whose
+operator is taken from the <tt>&lt;mo&gt;</tt> element contained in the
+row, when that operator is unique, even if it appears multiple times.
+</p>
+
+<pre>
+&lt;mrow&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mrow&gt;
+  &lt;mn&gt;4&lt;/mn&gt;
+  &lt;mo&gt;&amp;#x2062;&lt;/mo&gt;
+  &lt;mi&gt;a&lt;/mi&gt;
+  &lt;mo&gt;&amp;#x2062;&lt;/mo&gt;
+  &lt;mi&gt;c&lt;/mi&gt;
+&lt;/mrow&gt;
+    -->
+&lt;apply&gt;
+  &lt;times/&gt;
+  &lt;cn&gt;4&lt;/cn&gt;
+  &lt;ci&gt;a&lt;/ci&gt;
+  &lt;ci&gt;c&lt;/ci&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The default intent values for the layout elements <tt>&lt;mfrac&gt;</tt>,
+<tt>&lt;msqrt&gt;</tt>, and <tt>&lt;mroot&gt;</tt> create <tt>&lt;apply&gt;</tt>
+elements using the operators <tt>&lt;divide/&gt;</tt>, <tt>&lt;root/&gt;</tt>,
+and <tt>&lt;root/&gt;</tt>, respectively, and process the child elements to
+supply the arguments of the operator.
+</p>
+
+<pre>
+&lt;mfrac&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mfrac&gt;
+    -->
+&lt;apply&gt;
+  &lt;divide/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;msqrt&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/msqrt&gt;
+    -->
+&lt;apply&gt;
+  &lt;root/&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mroot&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mroot&gt;
+-->
+&lt;apply&gt;
+  &lt;root/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The default intent values for the layout elements <tt>&lt;mstyle&gt;</tt>,
+<tt>&lt;merror&gt;</tt>, and <tt>&lt;mpadded&gt;</tt> process the child
+elements of the inferred mrow contained in these elements.
+</p>
+
+<pre>
+&lt;mstyle&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mstyle&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;merror&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/merror&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;mpadded&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mpadded&gt;
+    -->
+&lt;apply&gt;
+  &lt;plus/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<p>
+The default intent values for the layout elements <tt>&lt;mphantom&gt;</tt>,
+<tt>&lt;mfenced&gt;</tt>, and <tt>&lt;menclose&gt;</tt> do not create content
+elements.
+</p>
+
+<pre>
+&lt;mphantom&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mphantom&gt;
+    --> []
+</pre>
+
+<pre>
+&lt;mfenced&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/mfenced&gt;
+    --> []
+</pre>
+
+<pre>
+&lt;menclose&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mo&gt;+&lt;/mo&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/menclose&gt;
+    --> []
+</pre>
+
+<h3>Script elements</h3>
+
+<p>
+The default intent value for the <tt>&lt;msup&gt;</tt> script element creates
+an <tt>&lt;apply&gt;</tt> element using the <tt>&lt;power/&gt;</tt> operator,
+and processes the child elements to supply the arguments of the operator.
+The default intent values for the other script elements
+<tt>&lt;msub&gt;</tt>, <tt>&lt;msubsup&gt;</tt>, <tt>&lt;munder&gt;</tt>,
+<tt>&lt;mover&gt;</tt>, <tt>&lt;munderover&gt;</tt>,
+and <tt>&lt;mmultiscripts&gt;</tt> do not create content elements.
+</p>
+
+<pre>
+&lt;msup&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/msup&gt;
+    -->
+&lt;apply&gt;
+  &lt;power/&gt;
+  &lt;ci&gt;x&lt;/ci&gt;
+  &lt;cn&gt;3&lt;/cn&gt;
+&lt;/apply&gt;
+</pre>
+
+<pre>
+&lt;msub&gt;
+  &lt;mi&gt;x&lt;/mi&gt;
+  &lt;mn&gt;3&lt;/mn&gt;
+&lt;/msub&gt;
+    --> []
+</pre>
+
+<h3>Table elements</h3>
+
+<p>
+The default intent value for the <tt>&lt;mtd&gt;</tt> element processes
+the child elements of the inferred mrow contained in the <tt>&lt;mtd&gt;</tt>.
+The default intent values for the other table elements
+<tt>&lt;mtable&gt;</tt>, <tt>&lt;mlabeledtr&gt;</tt>, <tt>&lt;mtr&gt;</tt>,
+<tt>&lt;maligngroup&gt;</tt>, and <tt>&lt;malignmark&gt;</tt> do not create
+content elements.
+</p>
+
+<h3>Elementary math</h3>
+
+<p>
+The default intent values for the elementary math elements
+<tt>&lt;mstack&gt;</tt>, <tt>&lt;mlongdiv&gt;</tt>, <tt>&lt;msgroup&gt;</tt>,
+<tt>&lt;msrow&gt;</tt>, <tt>&lt;mscarries&gt;</tt>, <tt>&lt;mscarry&gt;</tt>,
+and <tt>&lt;msline&gt;</tt> do not create content elements.
+</p>
+
+<h3>Action elements</h3>
+
+<p>
+The default intent value for the <tt>&lt;maction&gt;</tt> element does not
+create content elements.
+</p>
+
+</body>
+</html>
