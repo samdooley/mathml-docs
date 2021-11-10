@@ -132,26 +132,55 @@ MathJax = {
 
         return result;
     };
+
+    XML.cleanup = function( xml )
+    {
+        if ( !xml.endsWith( "\r\n" ) )
+        {
+            xml = xml + "\r\n";
+        }
+        if ( xml.indexOf( "</math>" ) == -1 )
+        {
+            xml = xml + "</math>\r\n";
+        }
+        if ( xml.indexOf( "<math" ) == -1 )
+        {
+            xml = "<math>\r\n" + xml;
+        }
+        if ( xml.indexOf( "<math xmlns=" ) == -1 )
+        {
+            xml = xml.replace( "<math",
+            "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"" );
+        }
+
+        return xml;
+    };
 </script>
 <script type="text/javascript" src="intent.js">
 </script>
 <script>
 var runtest = function() {
-    markup = "<math xmlns=\"http://www.w3.org/1998/Math/MathML\">\r\n  <mrow>\r\n    <mi>x</mi>\r\n    <mo>=</mo>\r\n    <mfrac>\r\n      <mrow>\r\n        <mrow>\r\n          <mo>-</mo>\r\n          <mi>b</mi>\r\n        </mrow>\r\n        <mo form=\"infix\" intent=\"pm\">&#x00B1;</mo>\r\n        <msqrt>\r\n          <mrow intent=\"@plus\">\r\n            <msup>\r\n              <mi>b</mi>\r\n              <mn>2</mn>\r\n            </msup>\r\n            <mrow>\r\n              <mo form=\"infix\">-</mo>\r\n              <mrow>\r\n                <mn>4</mn>\r\n                <mo>&#x2062;</mo>\r\n                <mi>a</mi>\r\n                <mo>&#x2062;</mo>\r\n                <mi>c</mi>\r\n              </mrow>\r\n            </mrow>\r\n          </mrow>\r\n        </msqrt>\r\n      </mrow>\r\n      <mrow>\r\n        <mn>2</mn>\r\n        <mo>&#x2062;</mo>\r\n        <mi>a</mi>\r\n      </mrow>\r\n    </mfrac>\r\n  </mrow>\r\n</math>\r\n"
+    markup = "<math>\r\n  <mrow>\r\n    <mi>x</mi>\r\n    <mo>=</mo>\r\n    <mfrac>\r\n      <mrow>\r\n        <mrow>\r\n          <mo>-</mo>\r\n          <mi>b</mi>\r\n        </mrow>\r\n        <mo form=\"infix\" intent=\"pm\">&#x00B1;</mo>\r\n        <msqrt>\r\n          <mrow intent=\"@plus\">\r\n            <msup>\r\n              <mi>b</mi>\r\n              <mn>2</mn>\r\n            </msup>\r\n            <mrow>\r\n              <mo form=\"infix\">-</mo>\r\n              <mrow>\r\n                <mn>4</mn>\r\n                <mo>&#x2062;</mo>\r\n                <mi>a</mi>\r\n                <mo>&#x2062;</mo>\r\n                <mi>c</mi>\r\n              </mrow>\r\n            </mrow>\r\n          </mrow>\r\n        </msqrt>\r\n      </mrow>\r\n      <mrow>\r\n        <mn>2</mn>\r\n        <mo>&#x2062;</mo>\r\n        <mi>a</mi>\r\n      </mrow>\r\n    </mfrac>\r\n  </mrow>\r\n</math>\r\n"
 
-    pmarkup.autocomplete="off"
-    pmarkup.autocorrect="off"
-    pmarkup.autocapitalize="off"
-    pmarkup.spellcheck=false
+    pmarkup.autocomplete="off";
+    pmarkup.autocorrect="off";
+    pmarkup.autocapitalize="off";
+    pmarkup.spellcheck=false;
 
-    cmarkup.autocomplete="off"
-    cmarkup.autocorrect="off"
-    cmarkup.autocapitalize="off"
-    cmarkup.spellcheck=false
+    cmarkup.autocomplete="off";
+    cmarkup.autocorrect="off";
+    cmarkup.autocapitalize="off";
+    cmarkup.spellcheck=false;
 
-    pmarkup.value = markup
-    pdisplay.innerHTML = markup
-    ptree.innerHTML = markup
+    pmarkup.value = markup;
+    update();
+};
+
+var update = function() {
+    markup = XML.cleanup( pmarkup.value );
+
+    pdisplay.innerHTML = markup;
+    ptree.innerHTML = markup;
 
     MathJax.typeset([pdisplay]);
 
@@ -182,5 +211,6 @@ textarea {
       <td><textarea id="cmarkup" rows="30" cols="60"></textarea></td>
     </tr>
   </table>
+  <p><input type="button" value="Update" onclick="update()"/></p>
 </body>
 </html>
