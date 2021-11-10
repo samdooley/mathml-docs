@@ -173,6 +173,8 @@ var runtest = function() {
     cmarkup.spellcheck=false;
 
     pmarkup.value = markup;
+    document.addEventListener( "paste", dopaste );
+
     update();
 };
 
@@ -186,6 +188,18 @@ var update = function() {
 
     MML.ptoc( ptree.firstChild );
     cmarkup.value = XML.print( ptree.firstChild.mathContent );
+};
+
+var dopaste = function( e )
+{
+    e.stopPropagation();
+    e.preventDefault();
+
+    var clipboardData = e.clipboardData || window.clipboardData;
+    var pastedData = clipboardData.getData( "Text" );
+
+    pmarkup.value = pastedData;
+    update();
 };
 </script>
 <style>
@@ -211,6 +225,5 @@ textarea {
       <td><textarea id="cmarkup" rows="30" cols="60"></textarea></td>
     </tr>
   </table>
-  <p><input type="button" value="Update" onclick="update()"/></p>
 </body>
 </html>
